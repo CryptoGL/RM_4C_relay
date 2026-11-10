@@ -1,35 +1,60 @@
-# Unit 4Relay 四路开关
+# Unit 4Relay for ESP RainMaker
 
-基于 ESP RainMaker 的四路开关固件，驱动 M5Stack Unit 4Relay（SKU U097，见 `Unit_4Relay.pdf`）。手机 App 里是一个节点上的四个 Switch 设备（开关1–开关4），可分别开关、定时和加入场景。
+[中文](README_CN.md)
 
-## 接线
+This example is a small ESP RainMaker firmware for the [M5Stack Unit 4Relay](https://docs.m5stack.com/en/unit/Unit_4Relay) (SKU U097). Use the ESP RainMaker Home app, on the public Classic deployment, to try the four relays: turn each channel on or off, add schedules, and use them in scenes.
 
-Grove HY2.0-4P：
+The firmware runs on ESP32-C3. The product code is in this directory.
 
-| 线色 | 信号 | 说明 |
+| File | What it does |
+| --- | --- |
+| `main/app_main.c` | RainMaker node「四路开关」, four switch devices, provisioning |
+| `main/app_driver.c` | I2C driver for the Unit 4Relay, saved on/off state, BOOT-button reset |
+| `main/Kconfig.projbuild` | I2C pins and options (`idf.py menuconfig` → Unit 4Relay) |
+
+## Hardware
+
+Connect the Grove cable packed with the unit:
+
+| Wire | Signal | ESP32-C3 |
 | --- | --- | --- |
-| 黑 | GND | 共地 |
-| 红 | 5V | 继电器线圈供电，接到板子的 5V，不要接 3V3 |
-| 黄 | SDA | ESP32-C3 默认 GPIO4 |
-| 白 | SCL | ESP32-C3 默认 GPIO5 |
+| Black | GND | GND |
+| Red | 5V | 5V, for the relay coils. Do not use 3V3 |
+| Yellow | SDA | GPIO4 |
+| White | SCL | GPIO5 |
 
-I2C 地址 `0x26`。寄存器 `0x10` bit0 = 1 时，板上 LED 跟随继电器。寄存器 `0x11`：bit3–bit0 分别是继电器 1–4，1 为吸合。
+The module's I2C address is `0x26`. Each relay is rated AC 250V / 10A or DC 28V / 10A. GPIO9 is the BOOT button, so it is not used for I2C.
 
-ESP32-C3 上 GPIO9 是 BOOT 键，所以 I2C 不用它。换板子时在 `idf.py menuconfig` → `Unit 4Relay` 里改 SDA/SCL。
+## Provisioning
 
-## 编译烧录
+A new board has no Wi-Fi credentials. It advertises BLE provisioning and prints a QR payload on the serial log, on the line `Provisioning QR`. The proof of possession (PoP) is random and is included in that payload.
 
-目标芯片是 ESP32-C3。IDF 使用 `/Users/LZJ/esp/esp-idf-6.0.3`。
+1. Build, flash, and open the serial monitor (commands below).
+2. Install ESP RainMaker Home: [Android](https://play.google.com/store/apps/details?id=com.espressif.novahome), [iOS](https://apps.apple.com/app/esp-rainmaker-home/id1563728960).
+3. On the landing screen, choose **ESP RainMaker Classic**. That is the public Classic deployment. Do not choose Neo or Private deployment. Sign in.
+4. Add a device and scan the QR code from the monitor. The phone connects to the board over BLE.
+5. Choose a 2.4 GHz Wi-Fi network and enter its password. ESP32-C3 cannot join 5 GHz networks.
+6. Wait until the board joins Wi-Fi and shows up in the app as the node「四路开关」.
+
+The QR line is printed only while the board is waiting to be provisioned. To see it again, reset Wi-Fi (below) and reboot.
+
+## Using the relays
+
+The node has four switch devices,「开关1」to「开关4」. Each has a Power control.
+
+- In the app, turn a switch on or off. The matching relay on the Unit 4Relay follows.
+- Schedules and scenes are enabled, so a switch can be timed or grouped with other RainMaker devices.
+- After the board is on the same LAN as the phone, the app can also control it locally. Local control uses security version 0.
+- Power-on restores the last on/off state of each channel.
+
+Hold BOOT (GPIO9) for about 3 seconds, then release, to erase the Wi-Fi password. Provision the board again; the RainMaker node stays on your account. Hold BOOT for about 10 seconds, then release, to factory-reset the node. Add the device in the app again after a factory reset. A short press of BOOT does not change the relays.
+
+## Build and flash
+
+ESP-IDF 5.1 or newer. This firmware was built with ESP-IDF 6.0.3.
 
 ```bash
-. /Users/LZJ/esp/esp-idf-6.0.3/export.sh
 cd examples/unit_4relay
 idf.py set-target esp32c3
 idf.py build flash monitor
 ```
-
-配网二维码打印在串口日志 `Provisioning QR`。用 ESP RainMaker App 扫码添加。BOOT 键按住 3 秒清除 Wi-Fi，按住 10 秒恢复出厂。短按 BOOT 不会改变继电器。
-
-四路本地按键默认关闭（GPIO 设为 -1）。需要时在 menuconfig 里给每一路指定一个低电平有效的 GPIO。
-
-断电后默认恢复上次的通断状态。若希望上电全关，关掉 `Restore relay state after reboot`。
