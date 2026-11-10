@@ -1,0 +1,95 @@
+menu "Unit 4Relay"
+
+    config UNIT_4RELAY_I2C_PORT
+        int "I2C port number"
+        range 0 1
+        default 0
+        help
+            I2C controller used to talk to the Unit 4Relay (default I2C0).
+
+    config UNIT_4RELAY_I2C_SDA_GPIO
+        int "I2C SDA GPIO"
+        default 4 if IDF_TARGET_ESP32C3
+        default 2 if IDF_TARGET_ESP32S3
+        default 8 if IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32H2
+        default 21
+        help
+            Yellow wire of the Grove cable.
+            ESP32-C3 default is GPIO4 so it does not clash with the BOOT button on GPIO9.
+            M5Stack Core PORT.A SDA is GPIO21.
+            M5Stack CoreS3 PORT.A SDA is GPIO2.
+
+    config UNIT_4RELAY_I2C_SCL_GPIO
+        int "I2C SCL GPIO"
+        default 5 if IDF_TARGET_ESP32C3
+        default 1 if IDF_TARGET_ESP32S3
+        default 9 if IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32H2
+        default 22
+        help
+            White wire of the Grove cable.
+            ESP32-C3 default is GPIO5.
+            M5Stack Core PORT.A SCL is GPIO22.
+            M5Stack CoreS3 PORT.A SCL is GPIO1.
+
+    config UNIT_4RELAY_I2C_FREQ_HZ
+        int "I2C frequency (Hz)"
+        range 10000 400000
+        default 100000
+        help
+            Bus speed. 100 kHz is the safe default for the STM32 on Unit 4Relay.
+
+    config UNIT_4RELAY_I2C_ADDR
+        hex "I2C address"
+        default 0x26
+        help
+            Factory address of Unit 4Relay is 0x26.
+
+    config UNIT_4RELAY_LED_SYNC
+        bool "LED follows relay (auto mode)"
+        default y
+        help
+            Write register 0x10 bit0 = 1 so each channel LED tracks its relay.
+            When disabled, the firmware drives the LED bits itself.
+
+    config UNIT_4RELAY_RESTORE_STATE
+        bool "Restore relay state after reboot"
+        default y
+        help
+            Keep the last on/off state of each channel in NVS and apply it at boot.
+            When disabled, all four relays are forced off at boot.
+
+    config UNIT_4RELAY_BOOT_GPIO
+        int "BOOT button GPIO (Wi-Fi / factory reset)"
+        default 28 if IDF_TARGET_ESP32C5
+        default 9 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H2
+        default 0
+        help
+            Hold for 3 seconds to reset Wi-Fi credentials.
+            Hold for 10 seconds to factory-reset the node.
+            A short press does not change the relays.
+
+    config UNIT_4RELAY_BTN1_GPIO
+        int "Local button GPIO for switch 1 (-1 disables)"
+        default -1
+        help
+            Active-low button. A click toggles relay 1 and reports the new state.
+
+    config UNIT_4RELAY_BTN2_GPIO
+        int "Local button GPIO for switch 2 (-1 disables)"
+        default -1
+        help
+            Active-low button. A click toggles relay 2 and reports the new state.
+
+    config UNIT_4RELAY_BTN3_GPIO
+        int "Local button GPIO for switch 3 (-1 disables)"
+        default -1
+        help
+            Active-low button. A click toggles relay 3 and reports the new state.
+
+    config UNIT_4RELAY_BTN4_GPIO
+        int "Local button GPIO for switch 4 (-1 disables)"
+        default -1
+        help
+            Active-low button. A click toggles relay 4 and reports the new state.
+
+endmenu
